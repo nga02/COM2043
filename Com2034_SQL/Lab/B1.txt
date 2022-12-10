@@ -1,0 +1,4 @@
+_Thao tác hệ quản trị sql sever 
+_Sử dụng công cụ SQL Mângement Studio và câu lệnh SQL
+
+C:\Program Files\Microsoft SQL Server\MSSQL15.SQLEXPRESS\MSSQL\DATA

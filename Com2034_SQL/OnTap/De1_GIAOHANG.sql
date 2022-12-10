@@ -1,0 +1,206 @@
+﻿CREATE DATABASE De1_GIAOHANG
+
+
+IF OBJECT_ID ('KHACHHANG') IS NOT NULL
+	DROP TABLE KHACHHANG 
+GO
+CREATE TABLE KHACHHANG
+(
+  MaKH INT PRIMARY KEY,
+  HoTenKH NVARCHAR(20),
+  DChiKH NVARCHAR(20),
+  GTinh NVARCHAR(5),
+  DThoaiKH VARCHAR(15)
+)
+
+-- tạo bảng nhân viên
+IF OBJECT_ID ('NHANVIEN') IS NOT NULL
+	DROP TABLE NHANVIEN 
+GO
+CREATE TABLE NHANVIEN
+(
+  MaNV VARCHAR(5) PRIMARY KEY,
+  HoTenNV NVARCHAR(20),
+  DChiNV NVARCHAR(20),
+  GTinh NVARCHAR(5),
+  DThoaiNV VARCHAR(15)
+)
+
+-- tạo bảng đơn hàng
+IF OBJECT_ID ('DONHANG') IS NOT NULL
+	DROP TABLE DONHANG 
+GO
+CREATE TABLE DONHANG
+(
+  MaKH INT ,
+  MaNV VARCHAR(5) ,
+  NgayDH DATE,
+  NgayGH DATE
+
+  PRIMARY KEY(MaKH, MaNV),
+  FOREIGN KEY (MaKH) REFERENCES KHACHHANG, 
+  FOREIGN KEY (MaNV) REFERENCES NHANVIEN
+)
+
+--BÀI 2:
+IF OBJECT_ID ('insert_KhachHang') IS NOT NULL
+	DROP PROC insert_KhachHang 
+GO
+CREATE PROC insert_KhachHang
+	  @MaKH INT,
+	  @HoTenKH NVARCHAR(20),
+	  @DChiKH NVARCHAR(20),
+	  @GTinh NVARCHAR(5),
+	  @DThoaiKH VARCHAR(15)
+AS 
+BEGIN
+	IF(@MaKH IS NULL OR @HoTenKH IS NULL OR @DChiKH IS NULL OR 
+	   @GTinh IS NULL OR @DThoaiKH IS NULL)
+		BEGIN
+			PRINT N'PHẢI NHẬP ĐỦ THÔNG TIN'
+		END
+	 ELSE IF EXISTS (SELECT * FROM dbo.KHACHHANG WHERE MaKH = @MaKH)
+	   PRINT N'Đã tồn tại mã khách hàng này'
+
+	ELSE
+		BEGIN
+			INSERT INTO KHACHHANG VALUES(@MaKH,@HoTenKH,@DChiKH,@GTinh,@DThoaiKH)
+			PRINT N'THÊM THÀNH CÔNG'
+		END
+END
+GO
+
+EXEC insert_KhachHang 1,N'LÊ THỊ NGA', N'THANH HOÁ',N'NỮ','0335188503'
+EXEC insert_KhachHang 2,N'HOÀNG VĂN ANH', N'HÀ NỘI',N'NAM','0335188546'
+EXEC insert_KhachHang 3,N'HÀ THỊ THUỶ', N'LẠNG SƠN',N'NỮ','0335188678'
+--------------------------
+IF OBJECT_ID ('insert_NhanVien') IS NOT NULL
+	DROP PROC insert_NhanVien
+GO
+CREATE PROC insert_NhanVien
+				  @MaNV VARCHAR(5),
+				  @HoTenNV NVARCHAR(20),
+				  @DChiNV NVARCHAR(20),
+				  @GTinh NVARCHAR(5),
+				  @DThoaiNV VARCHAR(15)
+AS
+ BEGIN
+ 	IF(@MaNV IS NULL OR @HoTenNV IS NULL OR @DChiNV IS NULL OR @GTinh IS NULL OR @DThoaiNV IS NULL)
+		 BEGIN
+	 		PRINT N'Phải điền đầy đủ thông tin'
+		 END
+
+	 ELSE IF EXISTS (SELECT * FROM dbo.NHANVIEN WHERE MaNV = @MaNV)
+	   PRINT N'Đã tồn tại mã nhân viên này'
+
+	 ELSE
+	   BEGIN
+	   	INSERT INTO NHANVIEN VALUES (@MaNV, @HoTenNV, @DChiNV, @GTinh, @DThoaiNV)
+	   END
+ END
+ GO
+ EXEC insert_NhanVien '001',N'NGUYỄN VĂN A', N'QUẬN 1', N'NAM','0357567556'
+ EXEC insert_NhanVien '002',N'LÊ THỊ B', N'QUẬN 2', N'NỮ','0357567123'
+ EXEC insert_NhanVien '003',N'HÀ VĂN C', N'QUẬN 1', N'NAM','0357567789'
+ --------------------------------------------------
+ IF OBJECT_ID ('insert_DonHang') IS NOT NULL
+	DROP PROC insert_DonHang
+GO
+CREATE PROC insert_DonHang  @MaKH INT ,
+				  @MaNV VARCHAR(5),
+				  @NgayDH DATE,
+				  @NgayGH DATE
+AS
+ BEGIN
+ 	IF(@MaKH IS NULL OR @MaNV IS NULL OR @NgayDH IS NULL OR @NgayGH IS NULL)
+		 BEGIN
+	 		PRINT N'Phải điền đầy đủ thông tin'
+		 END
+	 ELSE
+	   BEGIN
+	   	INSERT DONHANG VALUES (@MaKH, @MaNV, @NgayDH, @NgayGH)
+	   END
+ END
+ GO
+ EXEC insert_DonHang 1,'002','2022/6/12','2022/6/14'
+ EXEC insert_DonHang 3,'003','2022/6/5','2022/6/20'
+ EXEC insert_DonHang 2,'002','2022/4/15','2022/5/8'
+ EXEC insert_DonHang 3,'001','2022/4/10','2022/5/1'
+
+ SELECT * FROM KHACHHANG
+ SELECT * FROM NHANVIEN
+ SELECT * FROM DONHANG
+
+--BAI3:
+/*Viết hàm các tham số đầu vào tương ứng với các cột của
+bảng KHACHHANG. Hàm này trả về MaKH thỏa mãn các giá trị 
+được truyền tham số*/
+IF OBJECT_ID ('f_MaKH') IS NOT NULL
+	DROP FUNCTION f_MaKH
+GO
+CREATE FUNCTION f_MaKH
+	(
+	  @HoTenKH NVARCHAR(20),
+	  @DChiKH NVARCHAR(20),
+	  @GTinh NVARCHAR(5),
+	  @DThoaiKH VARCHAR(15)
+	 )
+RETURNS NVARCHAR(100)
+AS
+BEGIN
+		IF NOT EXISTS (SELECT * FROM KHACHHANG WHERE HoTenKH = @HoTenKH AND DChiKH = @DChiKH AND GTinh = @GTinh AND DThoaiKH = @DThoaiKH)
+			RETURN N'Không tồn tại khách hàng này'
+		
+			RETURN N'MÃ KHÁCH HÀNG LÀ:' + CAST((SELECT MaKH FROM KHACHHANG 
+					WHERE HoTenKH=@HoTenKH AND DChiKH=@DChiKH AND GTinh=@GTinh AND DThoaiKH= @DThoaiKH)
+					AS VARCHAR(10))
+END
+
+PRINT dbo.f_MaKH (N'LÊ THỊ NGA', N'THANH HOÁ',N'NỮ','0335188503')
+
+
+/*4.Tạo View lưu thông tin của TOP 2 đơn hàng có ngày đặt 
+gần nhất: MaKH, HoTenKH, DChiKH, DThoaiKH, MaNV, HoTenNV, 
+DThoaiNV. */
+IF OBJECT_ID ('Vi_TOP2') IS NOT NULL
+	DROP VIEW Vi_TOP2
+GO
+CREATE VIEW Vi_TOP2
+AS 
+	SELECT TOP 2 KHACHHANG.MaKH, HoTenKH, DChiKH, DThoaiKH, NHANVIEN.MaNV, HoTenNV, DThoaiNV 
+	FROM KHACHHANG JOIN DONHANG ON KHACHHANG.MaKH=DONHANG.MaKH 
+				JOIN NHANVIEN ON NHANVIEN.MaNV=DONHANG.MaNV
+	ORDER BY NgayDH DESC
+SELECT * FROM Vi_TOP2
+
+/*5.Viết một SP nhận một tham số đầu vào là NgayGH.
+SP này thực hiện thao tác xóa thông tin của khách hàng
+và nhân viên giao hàng tương ứng.*/
+IF OBJECT_ID ('sp_Xoa') IS NOT NULL
+	DROP PROC sp_Xoa
+GO
+CREATE PROC sp_Xoa @NgayGH  DATE
+AS
+BEGIN 
+	BEGIN TRY
+		BEGIN TRAN
+			DECLARE @table TABLE(MaKH INT,MaNV VARCHAR(5))
+			INSERT INTO @table SELECT MaKH,MaNV FROM DONHANG WHERE NgayGH = @NgayGH
+
+			DELETE FROM DONHANG WHERE MaKH in (SELECT MaKH FROM @table )
+									OR MaNV IN(SELECT MaNV FROM @table ) ---XOAS TRIETJ DE
+			DELETE FROM KHACHHANG WHERE MaKH in (SELECT MaKH FROM @table )
+			DELETE FROM NHANVIEN WHERE MaNV IN(SELECT MaNV FROM @table )
+		COMMIT TRAN
+	END TRY
+
+	BEGIN CATCH
+		ROLLBACK TRAN
+	END CATCH
+END
+
+EXEC sp_Xoa  '2022/5/8'
+
+SELECT * FROM DONHANG
+
+

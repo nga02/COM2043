@@ -1,0 +1,200 @@
+﻿CREATE DATABASE DE10_QLHH
+--------------------------------------
+IF OBJECT_ID('KHACHHANG') IS NOT NULL
+	DROP TABLE KHACHHANG
+GO
+CREATE TABLE KHACHHANG
+(
+	MaKH VARCHAR(5) PRIMARY KEY,
+	TenKH NVARCHAR(50),
+	DiaChi NVARCHAR(200),
+	SDT VARCHAR(15),
+	GioiTinh VARCHAR(5)
+)
+-----------------------------------------
+IF OBJECT_ID('MATHANG') IS NOT NULL
+	DROP TABLE MATHANG
+GO
+CREATE TABLE MATHANG 
+(
+	MaMH VARCHAR(10) PRIMARY KEY,
+	TenMH NVARCHAR(50) ,
+	DonGia MONEY,
+)
+------------------------------------------
+IF OBJECT_ID('DONDH') IS NOT NULL
+	DROP TABLE DONDH
+GO
+CREATE TABLE DONDH 
+(
+	MaDH VARCHAR(10) PRIMARY KEY,
+	MAKH VARCHAR(5),
+	NgayDat DATE ,
+	NgayGh DATE,
+	FOREIGN KEY (MaKH) REFERENCES KHACHHANG
+
+)
+IF OBJECT_ID('ChitietDH') IS NOT NULL
+	DROP TABLE ChitietDH
+GO
+CREATE TABLE ChitietDH 
+(
+	MADH VARCHAR(10),
+	MAMH VARCHAR(10),
+	SLUONG INT,
+	FOREIGN KEY (MaDH) REFERENCES DONDH,
+	FOREIGN KEY (MaMH) REFERENCES MATHANG,
+	PRIMARY KEY (MaDH,MaMH) 
+
+)
+---2.	Thêm thông tin vào các bảng
+---BẢNG KHÁCH HÀNG
+IF OBJECT_ID('insert_KHACHHANG') IS NOT NULL
+	DROP PROC insert_KHACHHANG
+GO
+CREATE PROC insert_KHACHHANG
+	@MaKH VARCHAR(5),
+	@TenKH NVARCHAR(50),
+	@DiaChi NVARCHAR(200),
+	@SDT VARCHAR(15),
+	@GioiTinh VARCHAR(5)
+AS 
+BEGIN
+	IF(@MaKH IS NULL OR @TenKH IS NULL OR @DiaChi IS NULL OR 
+	@SDT IS NULL OR @GioiTinh IS NULL)
+			PRINT N' CẦN ĐIỀN ĐẦY ĐỦ THÔNG TIN'
+	ELSE IF EXISTS (SELECT * FROM KHACHHANG WHERE MaKH=@MaKH)
+		PRINT N'MÃ KHÁCH HÀNG NÀY ĐÃ TỒN TẠI'
+	ELSE
+		BEGIN
+			INSERT INTO KHACHHANG VALUES(@MaKH, @TenKH,@DiaChi, @SDT ,@GioiTinh)
+		END
+END
+-------------BẢNG MATHANG
+IF OBJECT_ID('insert_MATHANG') IS NOT NULL
+	DROP PROC insert_MATHANG
+GO
+CREATE PROC insert_MATHANG 
+	@MaMH VARCHAR(10),
+	@TenMH NVARCHAR(50) ,
+	@DonGia MONEY
+AS
+BEGIN
+	IF(@MaMH IS NULL OR @TenMH IS NULL OR @DonGia IS NULL )
+		PRINT N'PHẢI ĐIỀN ĐỦ THÔNG TIN'
+	ELSE IF EXISTS(SELECT * FROM MATHANG WHERE @MaMH=MaMH)
+		PRINT N'MÃ MẶT HÀNG NÀY ĐÃ TỒN TẠI'
+	ELSE
+		BEGIN
+			INSERT INTO MATHANG VALUES (@MaMH, @TenMH, @DonGia)
+		END
+END
+-------------BẢNG DONDH
+IF OBJECT_ID('insert_DONDH') IS NOT NULL
+	DROP PROC insert_DONDH
+GO
+CREATE PROC insert_DONDH 
+	@MaDH VARCHAR(10) ,
+	@MAKH VARCHAR(5),
+	@NgayDat DATE ,
+	@NgayGh DATE
+AS 
+BEGIN 
+	IF(@MaDH IS NULL OR @MAKH IS NULL OR @NgayDat IS NULL OR @NgayGh IS NULL )
+		PRINT N'PHẢI ĐỦ THÔNG TIN'	
+	ELSE IF NOT EXISTS(SELECT MaKH FROM KHACHHANG WHERE MaKH=@MAKH)
+		PRINT N'MaKH NÀY KHÔNG TỒN TẠI'
+	ELSE IF EXISTS(SELECT MaDH FROM DONDH WHERE MaDH=@MaDH)
+		PRINT N'MaDH NÀY ĐÃ TỒN TẠI'
+	ELSE 
+		BEGIN
+			INSERT INTO DONDH VALUES(@MaDH ,@MAKH ,@NgayDat, @NgayGh)
+			PRINT N'THÊM THÀNH CÔNG'	
+		END
+END
+
+
+
+------------BẢNG ChitietDH
+IF OBJECT_ID('insert_ChitietDH') IS NOT NULL
+	DROP PROC insert_ChitietDH
+GO
+CREATE PROC insert_ChitietDH
+		@MADH VARCHAR(10),
+		@MAMH VARCHAR(10),
+		@SLUONG INT
+AS 
+BEGIN
+	IF(@MADH IS NULL OR @MAMH IS NULL OR @SLUONG IS NULL )
+		PRINT N'THIẾU THÔNG TIN'
+	ELSE IF EXISTS(SELECT * FROM ChitietDH WHERE MaDH=@MaDH and MaMH=@MAMH) 
+		PRINT N'KHÔNG ĐÚNG DỮ LIỆU'
+	ELSE 
+		BEGIN
+			INSERT INTO ChitietDH VALUES (@MADH, @MAMH,@SLUONG )
+		END
+END
+
+
+EXEC insert_KHACHHANG '001',N'LÊ THỊ NGA',N'THANH HOÁ','0335188503',N'Nữ'
+EXEC insert_KHACHHANG '002',N'HOÀNG VĂN ANH',N'HẢI PHÒNG','0435689878',N'Nam'
+EXEC insert_KHACHHANG '003',N'HÀ THỊ THUỶ',N'HÀ NỘI','0335188503',N'Nữ'
+
+EXEC insert_MATHANG 'M01',N'Hoa hồng Spirit of Freedom',150
+EXEC insert_MATHANG 'M02',N'Hoa hồng leo Huntington',300
+EXEC insert_MATHANG 'M03',N'Hoa hồng Kate',250
+
+
+EXEC insert_DONDH 'D01','003','2022-05-20','2022-05-25'
+EXEC insert_DONDH 'D02','001','2022-06-12','2022-06-25'
+EXEC insert_DONDH 'D03','002','2022-04-20','2022-05-10'
+
+
+EXEC insert_ChitietDH 'D01','M02',2
+EXEC insert_ChitietDH 'D02','M01',3
+EXEC insert_ChitietDH 'D03','M03',1
+
+SELECT * FROM KHACHHANG
+SELECT * FROM MATHANG
+SELECT * FROM DONDH
+SELECT * FROM ChitietDH
+
+/*3.Viết hàm các tham số đầu vào tương ứng với các cột: của bảng khách hàng.
+Hàm này trả về makh (giá trị của cột khóa chính của bảng khachhang) 
+thỏa mãn các giá trị được truyền tham số.*/
+IF OBJECT_ID('f_Makh') IS NOT NULL
+	DROP FUNCTION f_Makh
+GO
+CREATE FUNCTION f_Makh
+	(@TenKH NVARCHAR(50),@DiaChi NVARCHAR(200),@SDT VARCHAR(15),@GioiTinh VARCHAR(5))
+RETURNS NVARCHAR(100) 
+AS
+	BEGIN 
+		IF NOT EXISTS (SELECT * FROM KHACHHANG WHERE @TenKH=TenKH AND  @DiaChi=DiaChi AND @SDT=SDT AND @GioiTinh=GioiTinh)
+			RETURN N'THIẾU THÔNG TIN'
+			
+			RETURN N'MÃ KHÁCH HÀNG LÀ:' + CAST((SELECT MaKH FROM KHACHHANG WHERE TenKH=@TenKH and DiaChi=@DiaChi 
+				and SDT=@SDT and GioiTinh=@GioiTinh) AS VARCHAR(10))
+	END
+	
+PRINT dbo.f_Makh(N'HÀ THỊ THUỶ',N'HÀ NỘI','0335188503',N'Nữ')
+
+/*4.Tạo View lưu thông tin của TOP 2 khách hàng có số tiền lớn nhất gồm các thông tin 
+sau: Tenkh,  Tenmh, ngaydh, ngaygh, soluong, dongia, thanhtien.*/
+IF OBJECT_ID('Vi_Top2') IS NOT NULL
+	DROP VIEW Vi_Top2
+GO
+CREATE VIEW Vi_Top2
+AS
+	SELECT TOP 2 TenMH,NgayDat,NgayGh,SLUONG,DonGia, DonGia * SLUONG AS N'Thành tiền'
+	FROM DONDH JOIN KHACHHANG ON KHACHHANG.MaKH=DONDH.MAKH					
+					JOIN ChitietDH on ChitietDH.MADH=DONDH.MaDH
+					JOIN MATHANG ON MATHANG.MaMH = ChitietDH.MAMH
+	ORDER BY DonGia * SLUONG DESC
+SELECT * FROM Vi_Top2
+
+--CÂU 5: LỖI ĐỀ
+
+	
+
+	
